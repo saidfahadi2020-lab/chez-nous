@@ -288,6 +288,14 @@
             margin-top: 10px;
             cursor: pointer;
         }
+
+        #admin-zone .box{background:#fff;border:2px dashed var(--accent-color);border-radius:10px;padding:14px;margin-bottom:16px}
+        #admin-zone input,#admin-zone select{width:100%;padding:9px;margin:4px 0 8px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;font-size:1rem}
+        #admin-zone button{background:var(--primary-color);color:#fff;border:0;border-radius:6px;padding:10px;font-weight:bold;width:100%;margin-top:4px}
+        #admin-zone button.alt{background:#999}#admin-zone button.del{background:#b3261e}
+        #admin-zone .row{border-top:1px solid #eee;padding:8px 0}
+        #admin-zone .row .line{display:flex;gap:6px}#admin-zone .row .line>*{flex:1}
+        .qty-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--primary-color);background:#fff;color:var(--primary-color);font-size:1.1rem;font-weight:bold;cursor:pointer;padding:0}
     </style>
 </head>
 <body>
@@ -303,6 +311,7 @@
     </header>
 
     <div class="container">
+        <div id="admin-zone"></div>
         <!-- Filtres Catégories -->
         <div class="categories-scroll" id="category-filters"></div>
 
@@ -333,10 +342,12 @@
                 <a href="#" id="wa-btn-2" class="whatsapp-btn" target="_blank" style="background: #128C7E;">📱 Numéro 2 : 07 46 17 30 35</a>
             </div>
 
+            <button class="close-modal" style="background:#f3d9d6;color:#b3261e" onclick="clearCart()">🗑 Vider le panier</button>
             <button class="close-modal" onclick="closeCartModal()">Fermer</button>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <script>
         // ============================================================
         // POUR AJOUTER UN PRODUIT OU UNE CATEGORIE : ajoutez une ligne ici.
@@ -353,75 +364,6 @@
             { id: 5, name: "Kusu-kuma", category: "Boulangerie", price: "0,50 €", desc: "Par lot de 5 pièces, fait maison.", type: "Fait maison" }
         ];
 
-
-        // ============================================================
-        // MODIFICATION SANS CODE : collez ici le lien CSV de votre Google Sheets
-        // (Fichier > Partager > Publier sur le web > CSV). Si le lien est vide
-        // ou ne marche pas, la liste ci-dessus est utilisée.
-        // ============================================================
-        const SHEET_CSV_URL = "";
-
-        // Lien de MODIFICATION de votre Google Sheets (celui de la barre d'adresse
-        // quand vous ouvrez le tableau). Le bouton "Modifier" n'apparait que si
-        // vous ouvrez le site avec ?admin a la fin : chezvous.vercel.app/?admin
-        // Seul votre compte Google peut modifier le tableau.
-        const SHEET_EDIT_URL = "";
-        if (SHEET_EDIT_URL && new URLSearchParams(location.search).has('admin')) {
-            window.addEventListener('DOMContentLoaded', () => {
-                const a = document.createElement('a');
-                a.href = SHEET_EDIT_URL; a.target = '_blank'; a.textContent = '✏️ Modifier les produits';
-                a.style.cssText = 'display:block;text-align:center;background:#d4af37;color:#5c3a21;font-weight:bold;padding:10px;border-radius:8px;margin-bottom:12px;text-decoration:none;font-size:0.9rem;';
-                document.querySelector('.container').prepend(a);
-            });
-        }
-
-        function parseCSV(text) {
-            const rows = []; let row = [], cur = '', q = false;
-            for (let i = 0; i < text.length; i++) {
-                const c = text[i];
-                if (q) {
-                    if (c === '"' && text[i+1] === '"') { cur += '"'; i++; }
-                    else if (c === '"') q = false;
-                    else cur += c;
-                } else if (c === '"') q = true;
-                else if (c === ',') { row.push(cur); cur = ''; }
-                else if (c === '\n' || c === '\r') {
-                    if (c === '\r' && text[i+1] === '\n') i++;
-                    row.push(cur); rows.push(row); row = []; cur = '';
-                } else cur += c;
-            }
-            if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
-            return rows.filter(r => r.some(x => x.trim() !== ''));
-        }
-
-        function formatPrice(v) {
-            const n = parseFloat(String(v).replace(/[^0-9,.\-]/g, '').replace(',', '.'));
-            return isNaN(n) ? String(v) : n.toFixed(2).replace('.', ',') + ' €';
-        }
-
-        async function loadFromSheet() {
-            if (!SHEET_CSV_URL) return;
-            try {
-                const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const rows = parseCSV(await res.text());
-                const head = rows[0].map(h => h.trim().toLowerCase());
-                const col = n => head.indexOf(n);
-                const list = rows.slice(1).map((r, i) => ({
-                    id: i + 1,
-                    name: (r[col('nom')] || '').trim(),
-                    category: (r[col('categorie')] || '').trim(),
-                    price: formatPrice(r[col('prix')] || '0'),
-                    desc: (r[col('description')] || '').trim(),
-                    type: (r[col('type')] || 'Fait maison').trim(),
-                    available: (r[col('disponible')] || 'oui').trim().toLowerCase()
-                })).filter(p => p.name && p.available !== 'non');
-                if (list.length) {
-                    products = list; cart = {}; currentCategory = 'Tous';
-                    updateCartBar(); renderCategories(); renderProducts();
-                }
-            } catch (e) { console.warn('Google Sheets indisponible, liste intégrée utilisée.', e); }
-        }
 
         let cart = {};
         let currentCategory = 'Tous';
@@ -443,10 +385,10 @@
                 card.innerHTML = `
                     <div>
                         <div class="product-header">
-                            <h3 class="product-name">${p.name}</h3>
-                            <span class="badge-homemade">${p.type}</span>
+                            <h3 class="product-name">${esc(p.name)}</h3>
+                            <span class="badge-homemade">${esc(p.type)}</span>
                         </div>
-                        <p class="product-desc">${p.desc}</p>
+                        <p class="product-desc">${esc(p.desc)}</p>
                     </div>
                     <div class="product-footer">
                         <span class="product-price">${p.price}</span>
@@ -512,7 +454,7 @@
 
                 let row = document.createElement('div');
                 row.className = 'cart-item-row';
-                row.innerHTML = `<span>${item.name} (x${item.qty})</span><span>${(cleanPrice * item.qty).toFixed(2)} €</span>`;
+                row.innerHTML = `<span>${esc(item.name)}</span><span style="display:flex;align-items:center;gap:8px"><button class="qty-btn" onclick="changeQty(${id},-1)">−</button><b>${item.qty}</b><button class="qty-btn" onclick="changeQty(${id},1)">+</button><span style="min-width:58px;text-align:right">${(cleanPrice * item.qty).toFixed(2)} €</span></span>`;
                 modalList.appendChild(row);
 
                 summaryText += `- ${item.name} x${item.qty}\n`;
@@ -528,13 +470,114 @@
             document.getElementById('cart-modal').style.display = 'flex';
         }
 
+        function changeQty(id, d) {
+            if (!cart[id]) return;
+            cart[id].qty += d;
+            if (cart[id].qty <= 0) delete cart[id];
+            updateCartBar();
+            Object.keys(cart).length ? openCartModal() : closeCartModal();
+        }
+        function clearCart() { cart = {}; updateCartBar(); closeCartModal(); }
+
         function closeCartModal() {
             document.getElementById('cart-modal').style.display = 'none';
         }
 
+
+        // ===== Base de données (Supabase) =====
+        const SB_URL = "https://nyxvhmhkavvafhszmlet.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eHZobWhrYXZ2YWZoc3ptbGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4MDE2MzAsImV4cCI6MjEwNjM3NzYzMH0.PYZRFYpn8MHRgaOZWig2UzLy7WORMzqYOnl_EtnzzvE";
+        const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+        let allRows = [];
+        const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const fmt = v => Number(v).toFixed(2).replace('.', ',') + ' €';
+
+        async function loadProducts() {
+            if (!sb) return;
+            const { data, error } = await sb.from('products').select('*').order('id');
+            if (error || !data) return;
+            allRows = data;
+            products = data.filter(r => r.available).map(r => ({ id: r.id, name: r.name, category: r.category, price: fmt(r.price), desc: r.description, type: r.type }));
+            cart = {}; updateCartBar();
+            if (!products.some(p => p.category === currentCategory)) currentCategory = 'Tous';
+            renderCategories(); renderProducts();
+        }
+
+        // ===== Espace administrateur : ouvrir le site avec /?admin =====
+        const zone = document.getElementById('admin-zone');
+        async function initAdmin() {
+            const { data: { session } } = await sb.auth.getSession();
+            session ? showPanel(session) : showLogin();
+        }
+        function showLogin() {
+            zone.innerHTML = `<div class="box"><b>Espace administrateur</b>
+              <input id="a-mail" type="email" placeholder="Votre e-mail" autocomplete="username">
+              <input id="a-pass" type="password" placeholder="Code secret" autocomplete="current-password">
+              <button id="a-login">Connexion</button>
+              <button class="alt" id="a-signup">Première fois : créer mon accès</button></div>`;
+            document.getElementById('a-login').onclick = async () => {
+                const { error } = await sb.auth.signInWithPassword({ email: a_mail(), password: a_pass() });
+                error ? alert('Connexion refusée : ' + error.message) : initAdmin();
+            };
+            document.getElementById('a-signup').onclick = async () => {
+                const { error } = await sb.auth.signUp({ email: a_mail(), password: a_pass() });
+                alert(error ? error.message : 'Un e-mail de confirmation vous a été envoyé. Confirmez-le, puis faites Connexion.');
+            };
+        }
+        const a_mail = () => document.getElementById('a-mail').value.trim();
+        const a_pass = () => document.getElementById('a-pass').value;
+
+        async function showPanel(session) {
+            const { data: ok } = await sb.rpc('is_admin');
+            if (!ok) {
+                zone.innerHTML = `<div class="box">Ce compte (${esc(session.user.email)}) n'est pas administrateur.<button class="alt" id="a-out">Déconnexion</button></div>`;
+                document.getElementById('a-out').onclick = async () => { await sb.auth.signOut(); initAdmin(); };
+                return;
+            }
+            const cats = [...new Set(allRows.map(r => r.category))];
+            zone.innerHTML = `<div class="box"><b>Administrateur</b> · ${esc(session.user.email)}
+              <h4>Ajouter un produit</h4>
+              <input id="n-name" placeholder="Nom du produit">
+              <input id="n-cat" list="cats" placeholder="Catégorie (existante ou nouvelle)">
+              <datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+              <input id="n-price" inputmode="decimal" placeholder="Prix en € (ex : 5,50)">
+              <input id="n-desc" placeholder="Description">
+              <select id="n-type"><option>Fait maison</option><option>Sélectionné</option></select>
+              <button id="n-add">Enregistrer le produit</button>
+              <h4>Modifier les produits</h4>
+              ${allRows.map(r => `<div class="row" data-id="${r.id}"><b>${esc(r.name)}</b> (${esc(r.category)})
+                <div class="line"><input class="e-price" inputmode="decimal" value="${String(r.price).replace('.', ',')}">
+                <select class="e-av"><option value="1"${r.available ? ' selected' : ''}>En vente</option><option value="0"${r.available ? '' : ' selected'}>Masqué</option></select></div>
+                <div class="line"><button class="e-save">Enregistrer</button><button class="del e-del">Supprimer</button></div></div>`).join('')}
+              <button class="alt" id="a-out">Déconnexion</button></div>`;
+            document.getElementById('a-out').onclick = async () => { await sb.auth.signOut(); zone.innerHTML = ''; initAdmin(); };
+            const num = v => parseFloat(String(v).replace(',', '.'));
+            document.getElementById('n-add').onclick = async () => {
+                const row = { name: v('n-name'), category: v('n-cat'), price: num(v('n-price')), description: v('n-desc'), type: v('n-type') };
+                if (!row.name || !row.category || isNaN(row.price)) return alert('Nom, catégorie et prix obligatoires.');
+                const { error } = await sb.from('products').insert(row);
+                if (error) return alert('Erreur : ' + error.message);
+                await loadProducts(); showPanel(session);
+            };
+            zone.querySelectorAll('.row').forEach(el => {
+                const id = el.dataset.id;
+                el.querySelector('.e-save').onclick = async () => {
+                    const { error } = await sb.from('products').update({ price: num(el.querySelector('.e-price').value), available: el.querySelector('.e-av').value === '1' }).eq('id', id);
+                    if (error) return alert('Erreur : ' + error.message);
+                    await loadProducts(); showPanel(session);
+                };
+                el.querySelector('.e-del').onclick = async () => {
+                    if (!confirm('Supprimer ce produit ?')) return;
+                    const { error } = await sb.from('products').delete().eq('id', id);
+                    if (error) return alert('Erreur : ' + error.message);
+                    await loadProducts(); showPanel(session);
+                };
+            });
+        }
+        const v = id => document.getElementById(id).value.trim();
         renderCategories();
         renderProducts();
-        loadFromSheet();
+        loadProducts().then(() => { if (sb && new URLSearchParams(location.search).has('admin')) initAdmin(); });
     </script>
 </body>
 </html>
