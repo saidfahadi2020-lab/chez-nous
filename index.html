@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHEZ NOUS - Boutique en ligne</title>
+    <style>
+        :root {
+            --primary-color: #5c3a21; /* Brun chaud */
+            --accent-color: #d4af37;  /* Ocre doré */
+            --bg-color: #fcf9f2;      /* Crème */
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+            object-fit: cover;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 3px 0 0 0;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* Navigation Catégories */
+        .categories-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-bottom: 15px;
+            scrollbar-width: none;
+        }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            background: white;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .cat-btn.active, .cat-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Panneau Admin Toggle */
+        .admin-toggle-bar {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .admin-btn {
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Formulaire Admin (Caché par défaut) */
+        #admin-panel {
+            background: white;
+            border: 2px dashed var(--accent-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        #admin-panel h3 { margin-top: 0; color: var(--primary-color); font-size: 1.1rem; }
+        #admin-panel input, #admin-panel select, #admin-panel textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #admin-panel button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Grille Produits */
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0 0 5px 0;
+        }
+
+        .badge-homemade {
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .product-desc {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 8px 0;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .product-price {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .add-to-cart-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Panier Flottant */
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 101;
+        }
+
+        .cart-info {
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .checkout-btn {
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Modal Panier / Commande */
+        #cart-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); }
+        .cart-item-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        
+        .whatsapp-choices {
+            margin-top: 15px;
+        }
+        .whatsapp-btn {
+            display: block;
+            background: #25D366;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+        .close-modal {
+            background: #ccc;
+            border: none;
+            padding: 8px;
+            width: 100%;
+            border-radius: 5px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 100 100' style='border-radius:50%; border:2px solid #d4af37;'><circle cx='50' cy='50' r='48' fill='#d4af37'/><path d='M50 20 L30 40 L35 40 L35 70 L65 70 L65 40 L70 40 Z' fill='#5c3a21'/></svg>
+            <div>
+                <h1>CHEZ NOUS</h1>
+                <p>Boutique en ligne • Avec soin</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Filtres Catégories -->
+        <div class="categories-scroll" id="category-filters"></div>
+
+        <!-- Liste des Produits -->
+        <div class="product-grid" id="product-list">
+            <!-- Généré par JavaScript -->
+        </div>
+
+    </div>
+
+    <!-- Barre de Panier Flottante -->
+    <div class="cart-bar" id="cart-bar" style="display: none;">
+        <div class="cart-info" id="cart-summary-text">0 article(s) | 0,00 €</div>
+        <button class="checkout-btn" onclick="openCartModal()">Voir mon panier</button>
+    </div>
+
+    <!-- Modal Panier / WhatsApp -->
+    <div id="cart-modal">
+        <div class="modal-content">
+            <h3>Votre Panier CHEZ NOUS</h3>
+            <div id="modal-items-list"></div>
+            <hr>
+            <p><b>Total estimé : <span id="modal-total-price">0,00 €</span></b></p>
+            
+            <div class="whatsapp-choices">
+                <p style="font-size: 0.85rem; margin-bottom: 5px;">Envoyer la commande sur WhatsApp :</p>
+                <a href="#" id="wa-btn-1" class="whatsapp-btn" target="_blank">📱 Numéro 1 : 06 21 67 92 29</a>
+                <a href="#" id="wa-btn-2" class="whatsapp-btn" target="_blank" style="background: #128C7E;">📱 Numéro 2 : 07 46 17 30 35</a>
+            </div>
+
+            <button class="close-modal" onclick="closeCartModal()">Fermer</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // POUR AJOUTER UN PRODUIT OU UNE CATEGORIE : ajoutez une ligne ici.
+        // type = "Fait maison" ou "Sélectionné". Une nouvelle catégorie
+        // apparaît automatiquement dès qu'un produit l'utilise.
+        // ============================================================
+        const CATEGORY_ICONS = { "Épices": "🌶️", "Boulangerie": "🥖", "Soins": "🧼", "Sélectionnés": "🛒" };
+
+        let products = [
+            { id: 1, name: "Masala Nkuhu", category: "Épices", price: "15,00 €", desc: "Épices pour sauce poulet, prêtes à utiliser au goût incomparable.", type: "Fait maison" },
+            { id: 2, name: "Masala Nyama", category: "Épices", price: "15,00 €", desc: "Épices pour sauce viande, un goût incomparable.", type: "Fait maison" },
+            { id: 3, name: "Masala Nfi", category: "Épices", price: "15,00 €", desc: "Épices pour sauce poisson, prêtes à l'emploi.", type: "Fait maison" },
+            { id: 4, name: "Zikonko-trede", category: "Boulangerie", price: "1,00 €", desc: "Par lot de 10 pièces, fait maison.", type: "Fait maison" },
+            { id: 5, name: "Kusu-kuma", category: "Boulangerie", price: "0,50 €", desc: "Par lot de 5 pièces, fait maison.", type: "Fait maison" }
+        ];
+
+
+        // ============================================================
+        // MODIFICATION SANS CODE : collez ici le lien CSV de votre Google Sheets
+        // (Fichier > Partager > Publier sur le web > CSV). Si le lien est vide
+        // ou ne marche pas, la liste ci-dessus est utilisée.
+        // ============================================================
+        const SHEET_CSV_URL = "";
+
+        // Lien de MODIFICATION de votre Google Sheets (celui de la barre d'adresse
+        // quand vous ouvrez le tableau). Le bouton "Modifier" n'apparait que si
+        // vous ouvrez le site avec ?admin a la fin : chezvous.vercel.app/?admin
+        // Seul votre compte Google peut modifier le tableau.
+        const SHEET_EDIT_URL = "";
+        if (SHEET_EDIT_URL && new URLSearchParams(location.search).has('admin')) {
+            window.addEventListener('DOMContentLoaded', () => {
+                const a = document.createElement('a');
+                a.href = SHEET_EDIT_URL; a.target = '_blank'; a.textContent = '✏️ Modifier les produits';
+                a.style.cssText = 'display:block;text-align:center;background:#d4af37;color:#5c3a21;font-weight:bold;padding:10px;border-radius:8px;margin-bottom:12px;text-decoration:none;font-size:0.9rem;';
+                document.querySelector('.container').prepend(a);
+            });
+        }
+
+        function parseCSV(text) {
+            const rows = []; let row = [], cur = '', q = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (q) {
+                    if (c === '"' && text[i+1] === '"') { cur += '"'; i++; }
+                    else if (c === '"') q = false;
+                    else cur += c;
+                } else if (c === '"') q = true;
+                else if (c === ',') { row.push(cur); cur = ''; }
+                else if (c === '\n' || c === '\r') {
+                    if (c === '\r' && text[i+1] === '\n') i++;
+                    row.push(cur); rows.push(row); row = []; cur = '';
+                } else cur += c;
+            }
+            if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+            return rows.filter(r => r.some(x => x.trim() !== ''));
+        }
+
+        function formatPrice(v) {
+            const n = parseFloat(String(v).replace(/[^0-9,.\-]/g, '').replace(',', '.'));
+            return isNaN(n) ? String(v) : n.toFixed(2).replace('.', ',') + ' €';
+        }
+
+        async function loadFromSheet() {
+            if (!SHEET_CSV_URL) return;
+            try {
+                const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = parseCSV(await res.text());
+                const head = rows[0].map(h => h.trim().toLowerCase());
+                const col = n => head.indexOf(n);
+                const list = rows.slice(1).map((r, i) => ({
+                    id: i + 1,
+                    name: (r[col('nom')] || '').trim(),
+                    category: (r[col('categorie')] || '').trim(),
+                    price: formatPrice(r[col('prix')] || '0'),
+                    desc: (r[col('description')] || '').trim(),
+                    type: (r[col('type')] || 'Fait maison').trim(),
+                    available: (r[col('disponible')] || 'oui').trim().toLowerCase()
+                })).filter(p => p.name && p.available !== 'non');
+                if (list.length) {
+                    products = list; cart = {}; currentCategory = 'Tous';
+                    updateCartBar(); renderCategories(); renderProducts();
+                }
+            } catch (e) { console.warn('Google Sheets indisponible, liste intégrée utilisée.', e); }
+        }
+
+        let cart = {};
+        let currentCategory = 'Tous';
+
+        function renderProducts() {
+            const listEl = document.getElementById('product-list');
+            listEl.innerHTML = '';
+
+            let filtered = currentCategory === 'Tous' ? products : products.filter(p => p.category === currentCategory);
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<p style="text-align:center; color:#666;">Aucun produit dans cette catégorie pour l\'instant.</p>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                let card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="product-header">
+                            <h3 class="product-name">${p.name}</h3>
+                            <span class="badge-homemade">${p.type}</span>
+                        </div>
+                        <p class="product-desc">${p.desc}</p>
+                    </div>
+                    <div class="product-footer">
+                        <span class="product-price">${p.price}</span>
+                        <button class="add-to-cart-btn" onclick="addToCart(${p.id})">+ Ajouter</button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function renderCategories() {
+            const bar = document.getElementById('category-filters');
+            bar.innerHTML = '';
+            const cats = ['Tous', ...new Set(products.map(p => p.category))];
+            cats.forEach(cat => {
+                const b = document.createElement('button');
+                b.className = 'cat-btn' + (cat === currentCategory ? ' active' : '');
+                b.textContent = (CATEGORY_ICONS[cat] ? CATEGORY_ICONS[cat] + ' ' : '') + cat;
+                b.addEventListener('click', () => { currentCategory = cat; renderCategories(); renderProducts(); });
+                bar.appendChild(b);
+            });
+        }
+
+        function addToCart(id) {
+            let p = products.find(prod => prod.id === id);
+            if(cart[id]) {
+                cart[id].qty += 1;
+            } else {
+                cart[id] = { ...p, qty: 1 };
+            }
+            updateCartBar();
+        }
+
+        function updateCartBar() {
+            let totalQty = 0;
+            let totalPrice = 0;
+
+            for(let id in cart) {
+                totalQty += cart[id].qty;
+                let cleanPrice = parseFloat(cart[id].price.replace(',', '.').replace('€', '')) || 0;
+                totalPrice += cleanPrice * cart[id].qty;
+            }
+
+            let cartBar = document.getElementById('cart-bar');
+            if(totalQty > 0) {
+                cartBar.style.display = 'flex';
+                document.getElementById('cart-summary-text').innerText = `${totalQty} article(s) | ~${totalPrice.toFixed(2)} €`;
+            } else {
+                cartBar.style.display = 'none';
+            }
+        }
+
+        function openCartModal() {
+            let modalList = document.getElementById('modal-items-list');
+            modalList.innerHTML = '';
+            let totalPrice = 0;
+            let summaryText = "Bonjour CHEZ NOUS, je souhaite commander :\n";
+
+            for(let id in cart) {
+                let item = cart[id];
+                let cleanPrice = parseFloat(item.price.replace(',', '.').replace('€', '')) || 0;
+                totalPrice += cleanPrice * item.qty;
+
+                let row = document.createElement('div');
+                row.className = 'cart-item-row';
+                row.innerHTML = `<span>${item.name} (x${item.qty})</span><span>${(cleanPrice * item.qty).toFixed(2)} €</span>`;
+                modalList.appendChild(row);
+
+                summaryText += `- ${item.name} x${item.qty}\n`;
+            }
+
+            document.getElementById('modal-total-price').innerText = totalPrice.toFixed(2) + " €";
+
+            let encodedText = encodeURIComponent(summaryText + `\nTotal estimé : ${totalPrice.toFixed(2)} €`);
+            
+            document.getElementById('wa-btn-1').href = `https://wa.me/33621679229?text=${encodedText}`;
+            document.getElementById('wa-btn-2').href = `https://wa.me/33746173035?text=${encodedText}`;
+
+            document.getElementById('cart-modal').style.display = 'flex';
+        }
+
+        function closeCartModal() {
+            document.getElementById('cart-modal').style.display = 'none';
+        }
+
+        renderCategories();
+        renderProducts();
+        loadFromSheet();
+    </script>
+</body>
+</html>
