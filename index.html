@@ -297,6 +297,7 @@
         #admin-zone .row .line{display:flex;gap:6px}#admin-zone .row .line>*{flex:1}
         .qty-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--primary-color);background:#fff;color:var(--primary-color);font-size:1.1rem;font-weight:bold;cursor:pointer;padding:0}
         .product-img{width:100%;height:190px;object-fit:cover;border-radius:8px;margin-bottom:10px}
+        .zone-info{background:#fff7e0;border:1px solid var(--accent-color);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:.9rem;line-height:1.45;color:var(--primary-color)}
     </style>
 </head>
 <body>
@@ -313,6 +314,7 @@
 
     <div class="container">
         <div id="admin-zone"></div>
+        <div class="zone-info">📍 <b>Nous sommes dans la Vienne (86)</b>, autour de <b>Poitiers</b> et <b>Châtellerault</b>.<br>🚚 Livraison possible un peu partout selon la quantité commandée, <b>sous conditions à convenir ensemble</b> lors de la commande.</div>
         <!-- Filtres Catégories -->
         <div class="categories-scroll" id="category-filters"></div>
 
@@ -338,6 +340,7 @@
             <p><b>Total estimé : <span id="modal-total-price">0,00 €</span></b></p>
             
             <div class="whatsapp-choices">
+                <p style="font-size:0.8rem;color:#6b5a4a;margin:0 0 8px">📍 Vienne (Poitiers, Châtellerault). Livraison ailleurs possible selon la quantité, à convenir ensemble. Paiement et livraison confirmés par WhatsApp.</p>
                 <p style="font-size: 0.85rem; margin-bottom: 5px;">Envoyer la commande sur WhatsApp :</p>
                 <a href="#" id="wa-btn-1" class="whatsapp-btn" target="_blank">📱 Numéro 1 : 06 21 67 92 29</a>
                 <a href="#" id="wa-btn-2" class="whatsapp-btn" target="_blank" style="background: #128C7E;">📱 Numéro 2 : 07 46 17 30 35</a>
@@ -463,7 +466,7 @@
 
             document.getElementById('modal-total-price').innerText = totalPrice.toFixed(2) + " €";
 
-            let encodedText = encodeURIComponent(summaryText + `\nTotal estimé : ${totalPrice.toFixed(2)} €`);
+            let encodedText = encodeURIComponent(summaryText + `\nTotal estimé : ${totalPrice.toFixed(2)} €\nMa commune / adresse de livraison : `);
             
             document.getElementById('wa-btn-1').href = `https://wa.me/33621679229?text=${encodedText}`;
             document.getElementById('wa-btn-2').href = `https://wa.me/33746173035?text=${encodedText}`;
