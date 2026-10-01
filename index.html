@@ -296,6 +296,7 @@
         #admin-zone .row{border-top:1px solid #eee;padding:8px 0}
         #admin-zone .row .line{display:flex;gap:6px}#admin-zone .row .line>*{flex:1}
         .qty-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--primary-color);background:#fff;color:var(--primary-color);font-size:1.1rem;font-weight:bold;cursor:pointer;padding:0}
+        .product-img{width:100%;height:190px;object-fit:cover;border-radius:8px;margin-bottom:10px}
     </style>
 </head>
 <body>
@@ -382,7 +383,7 @@
             filtered.forEach(p => {
                 let card = document.createElement('div');
                 card.className = 'product-card';
-                card.innerHTML = `
+                card.innerHTML = `${p.image ? `<img class="product-img" loading="lazy" src="${esc(p.image)}" alt="${esc(p.name)}">` : ''}
                     <div>
                         <div class="product-header">
                             <h3 class="product-name">${esc(p.name)}</h3>
@@ -497,7 +498,7 @@
             const { data, error } = await sb.from('products').select('*').order('id');
             if (error || !data) return;
             allRows = data;
-            products = data.filter(r => r.available).map(r => ({ id: r.id, name: r.name, category: r.category, price: fmt(r.price), desc: r.description, type: r.type }));
+            products = data.filter(r => r.available).map(r => ({ id: r.id, name: r.name, category: r.category, price: fmt(r.price), desc: r.description, type: r.type, image: r.image_url }));
             cart = {}; updateCartBar();
             if (!products.some(p => p.category === currentCategory)) currentCategory = 'Tous';
             renderCategories(); renderProducts();
@@ -542,10 +543,13 @@
               <datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
               <input id="n-price" inputmode="decimal" placeholder="Prix en € (ex : 5,50)">
               <input id="n-desc" placeholder="Description">
+              <label style="font-size:.85rem">📷 Photo du produit :</label><input id="n-photo" type="file" accept="image/*">
               <select id="n-type"><option>Fait maison</option><option>Sélectionné</option></select>
               <button id="n-add">Enregistrer le produit</button>
               <h4>Modifier les produits</h4>
               ${allRows.map(r => `<div class="row" data-id="${r.id}"><b>${esc(r.name)}</b> (${esc(r.category)})
+                ${r.image_url ? `<img src="${esc(r.image_url)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;display:block;margin:6px 0">` : ''}
+                <label style="font-size:.85rem">📷 ${r.image_url ? 'Changer la photo' : 'Ajouter une photo'} :</label><input type="file" class="e-photo" accept="image/*">
                 <div class="line"><input class="e-price" inputmode="decimal" value="${String(r.price).replace('.', ',')}">
                 <select class="e-av"><option value="1"${r.available ? ' selected' : ''}>En vente</option><option value="0"${r.available ? '' : ' selected'}>Masqué</option></select></div>
                 <div class="line"><button class="e-save">Enregistrer</button><button class="del e-del">Supprimer</button></div></div>`).join('')}
@@ -555,6 +559,8 @@
             document.getElementById('n-add').onclick = async () => {
                 const row = { name: v('n-name'), category: v('n-cat'), price: num(v('n-price')), description: v('n-desc'), type: v('n-type') };
                 if (!row.name || !row.category || isNaN(row.price)) return alert('Nom, catégorie et prix obligatoires.');
+                const pf = document.getElementById('n-photo').files[0];
+                if (pf) { try { row.image_url = await uploadPhoto(pf); } catch (e) { return alert('Photo : ' + e.message); } }
                 const { error } = await sb.from('products').insert(row);
                 if (error) return alert('Erreur : ' + error.message);
                 await loadProducts(); showPanel(session);
@@ -562,7 +568,10 @@
             zone.querySelectorAll('.row').forEach(el => {
                 const id = el.dataset.id;
                 el.querySelector('.e-save').onclick = async () => {
-                    const { error } = await sb.from('products').update({ price: num(el.querySelector('.e-price').value), available: el.querySelector('.e-av').value === '1' }).eq('id', id);
+                    const upd = { price: num(el.querySelector('.e-price').value), available: el.querySelector('.e-av').value === '1' };
+                    const pf = el.querySelector('.e-photo').files[0];
+                    if (pf) { try { upd.image_url = await uploadPhoto(pf); } catch (e) { return alert('Photo : ' + e.message); } }
+                    const { error } = await sb.from('products').update(upd).eq('id', id);
                     if (error) return alert('Erreur : ' + error.message);
                     await loadProducts(); showPanel(session);
                 };
@@ -575,6 +584,18 @@
             });
         }
         const v = id => document.getElementById(id).value.trim();
+        async function uploadPhoto(file) {
+            const bmp = await createImageBitmap(file);
+            const k = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+            const c = document.createElement('canvas');
+            c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+            c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+            const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+            const path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+            const { error } = await sb.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg' });
+            if (error) throw error;
+            return sb.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+        }
         renderCategories();
         renderProducts();
         loadProducts().then(() => { if (sb && new URLSearchParams(location.search).has('admin')) initAdmin(); });
