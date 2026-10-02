@@ -6,6 +6,7 @@
     <title>CHEZ NOUS - Boutique en ligne</title>
     <link rel="icon" type="image/png" href="/icon.png">
     <link rel="apple-touch-icon" href="/icon.png">
+    <script defer src="/_vercel/insights/script.js"></script>
     <meta name="apple-mobile-web-app-title" content="CHEZ NOUS">
     <style>
         :root {
@@ -314,6 +315,13 @@
         .rv-form button{width:100%;background:var(--primary-color);color:#fff;border:0;border-radius:8px;padding:11px;font-weight:bold;font-size:1rem}
         .rv-form small{display:block;margin-top:6px;color:#6b5a4a}
         #admin-zone .rv{border-top:1px solid #eee;padding:8px 0}#admin-zone .rv .line{display:flex;gap:6px}#admin-zone .rv .line>*{flex:1}
+        .product-card{position:relative}
+        .tag{position:absolute;top:10px;left:10px;z-index:2;color:#fff;font-weight:bold;font-size:.75rem;padding:4px 10px;border-radius:20px}
+        .tag-new{background:#2e7d32}.tag-promo{background:#c62828}
+        .stock{margin:6px 0 0;font-size:.85rem;font-weight:bold;color:#b26a00}
+        #rating-sum{margin:-4px 0 12px;font-weight:bold;color:var(--primary-color)}#rating-sum a{color:inherit;text-decoration:none}
+        .actions{display:flex;gap:8px;margin-bottom:14px}.actions button{flex:1;padding:10px;border:1px solid var(--primary-color);background:#fff;color:var(--primary-color);border-radius:8px;font-weight:bold;font-size:.9rem}
+        .foot{text-align:center;margin:30px 0 10px;color:#6b5a4a;font-size:.85rem}.foot img{width:90px;height:90px;border-radius:50%}
     </style>
 </head>
 <body>
@@ -330,7 +338,9 @@
 
     <div class="container">
         <div id="admin-zone"></div>
-        <div class="zone-info">📍 <b>Nous sommes dans la Vienne (86)</b>, autour de <b>Poitiers</b> et <b>Châtellerault</b>.<br>🚚 Livraison possible un peu partout selon la quantité commandée, <b>sous conditions à convenir ensemble</b> lors de la commande.</div>
+        <div class="zone-info">📍 <b>Nous sommes dans la Vienne (86)</b>, autour de <b>Poitiers</b> et <b>Châtellerault</b>.<br>🗓️ <b>Commandes et livraisons 7j/7.</b><br>🚚 Livraison possible un peu partout selon la quantité commandée, <b>sous conditions à convenir ensemble</b> lors de la commande.</div>
+        <div id="rating-sum"></div>
+        <div class="actions"><button type="button" onclick="contactUs()">💬 Une question ?</button><button type="button" onclick="shareShop()">📤 Partager la boutique</button></div>
         <!-- Filtres Catégories -->
         <div class="categories-scroll" id="category-filters"></div>
 
@@ -351,6 +361,8 @@
                 <button type="button" onclick="sendReview()">Publier mon avis</button>
             </div>
         </section>
+
+        <footer class="foot"><img id="foot-logo" alt="CHEZ NOUS"><p><b>CHEZ NOUS</b> · Avec soin<br>Vienne (86) · Commandes 7j/7</p></footer>
 
     </div>
 
@@ -376,7 +388,7 @@
             </div>
 
             <div class="whatsapp-choices">
-                <p style="font-size:0.8rem;color:#6b5a4a;margin:0 0 8px">📍 Vienne (Poitiers, Châtellerault). Livraison ailleurs possible selon la quantité, à convenir ensemble. Paiement et livraison confirmés par WhatsApp.</p>
+                <p style="font-size:0.8rem;color:#6b5a4a;margin:0 0 8px">📍 Vienne (Poitiers, Châtellerault). Ouvert 7j/7. Livraison ailleurs possible selon la quantité, à convenir ensemble. Paiement et livraison confirmés par WhatsApp.</p>
                 <p style="font-size: 0.85rem; margin-bottom: 5px;">Envoyer la commande sur WhatsApp :</p>
                 <a href="#" id="wa-btn-1" class="whatsapp-btn" target="_blank">📱 Numéro 1 : 06 21 67 92 29</a>
                 <a href="#" id="wa-btn-2" class="whatsapp-btn" target="_blank" style="background: #128C7E;">📱 Numéro 2 : 07 46 17 30 35</a>
@@ -422,13 +434,13 @@
             filtered.forEach(p => {
                 let card = document.createElement('div');
                 card.className = 'product-card';
-                card.innerHTML = `${p.image ? `<img class="product-img" loading="lazy" src="${esc(p.image)}" alt="${esc(p.name)}">` : ''}
+                card.innerHTML = `${p.badge ? `<span class="tag tag-${p.badge === 'Promo' ? 'promo' : 'new'}">${esc(p.badge)}</span>` : ''}${p.image ? `<img class="product-img" loading="lazy" src="${esc(p.image)}" alt="${esc(p.name)}">` : ''}
                     <div>
                         <div class="product-header">
                             <h3 class="product-name">${esc(p.name)}</h3>
                             <span class="badge-homemade">${esc(p.type)}</span>
                         </div>
-                        <p class="product-desc">${esc(p.desc)}</p>
+                        <p class="product-desc">${esc(p.desc)}</p>${p.note ? `<div class="stock">⏳ ${esc(p.note)}</div>` : ''}
                     </div>
                     <div class="product-footer">
                         <span class="product-price">${p.price}</span>
@@ -555,7 +567,7 @@
             const { data, error } = await sb.from('products').select('*').order('id');
             if (error || !data) return;
             allRows = data;
-            products = data.filter(r => r.available).map(r => ({ id: r.id, name: r.name, category: r.category, price: fmt(r.price), desc: r.description, type: r.type, image: r.image_url }));
+            products = data.filter(r => r.available).map(r => ({ id: r.id, name: r.name, category: r.category, price: fmt(r.price), desc: r.description, type: r.type, image: r.image_url, badge: r.badge, note: r.stock_note }));
             cart = {}; updateCartBar();
             if (!products.some(p => p.category === currentCategory)) currentCategory = 'Tous';
             renderCategories(); renderProducts();
@@ -604,6 +616,8 @@
               <datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
               <input id="n-price" inputmode="decimal" placeholder="Prix en € (ex : 5,50)">
               <input id="n-desc" placeholder="Description">
+              <select id="n-badge"><option value="">Pas de badge</option><option>Nouveau</option><option>Promo</option></select>
+              <input id="n-stock" maxlength="40" placeholder="Stock (ex : Plus que 3, Sur commande)">
               <label style="font-size:.85rem">📷 Photo du produit :</label><input id="n-photo" type="file" accept="image/*">
               <select id="n-type"><option>Fait maison</option><option>Sélectionné</option></select>
               <button id="n-add">Enregistrer le produit</button>
@@ -613,13 +627,17 @@
                 <label style="font-size:.85rem">📷 ${r.image_url ? 'Changer la photo' : 'Ajouter une photo'} :</label><input type="file" class="e-photo" accept="image/*">
                 <div class="line"><input class="e-price" inputmode="decimal" value="${String(r.price).replace('.', ',')}">
                 <select class="e-av"><option value="1"${r.available ? ' selected' : ''}>En vente</option><option value="0"${r.available ? '' : ' selected'}>Masqué</option></select></div>
+                <div class="line"><select class="e-badge"><option value="">Pas de badge</option><option${r.badge === 'Nouveau' ? ' selected' : ''}>Nouveau</option><option${r.badge === 'Promo' ? ' selected' : ''}>Promo</option></select><input class="e-stock" maxlength="40" placeholder="Stock / précision" value="${esc(r.stock_note || '')}"></div>
                 <div class="line"><button class="e-save">Enregistrer</button><button class="del e-del">Supprimer</button></div></div>`).join('')}
               ${revHtml}
+              <h4>QR code de la boutique</h4><div id="qr" style="text-align:center;margin:8px 0"></div><small>Capture d'écran puis imprime-le : il ouvre la boutique.</small>
               <button class="alt" id="a-out">Déconnexion</button></div>`;
             document.getElementById('a-out').onclick = async () => { await sb.auth.signOut(); zone.innerHTML = ''; initAdmin(); };
+            const mkQR = () => new QRCode(document.getElementById('qr'), { text: location.origin, width: 200, height: 200 });
+            if (window.QRCode) mkQR(); else { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; sc.onload = mkQR; document.head.appendChild(sc); }
             const num = v => parseFloat(String(v).replace(',', '.'));
             document.getElementById('n-add').onclick = async () => {
-                const row = { name: v('n-name'), category: v('n-cat'), price: num(v('n-price')), description: v('n-desc'), type: v('n-type') };
+                const row = { name: v('n-name'), category: v('n-cat'), price: num(v('n-price')), description: v('n-desc'), type: v('n-type'), badge: v('n-badge') || null, stock_note: v('n-stock') || null };
                 if (!row.name || !row.category || isNaN(row.price)) return alert('Nom, catégorie et prix obligatoires.');
                 const pf = document.getElementById('n-photo').files[0];
                 if (pf) { try { row.image_url = await uploadPhoto(pf); } catch (e) { return alert('Photo : ' + e.message); } }
@@ -644,7 +662,7 @@
             zone.querySelectorAll('.row').forEach(el => {
                 const id = el.dataset.id;
                 el.querySelector('.e-save').onclick = async () => {
-                    const upd = { price: num(el.querySelector('.e-price').value), available: el.querySelector('.e-av').value === '1' };
+                    const upd = { price: num(el.querySelector('.e-price').value), available: el.querySelector('.e-av').value === '1', badge: el.querySelector('.e-badge').value || null, stock_note: el.querySelector('.e-stock').value.trim() || null };
                     const pf = el.querySelector('.e-photo').files[0];
                     if (pf) { try { upd.image_url = await uploadPhoto(pf); } catch (e) { return alert('Photo : ' + e.message); } }
                     const { error } = await sb.from('products').update(upd).eq('id', id);
@@ -663,10 +681,18 @@
         async function loadReviews() {
             if (!sb) return;
             const { data } = await sb.from('reviews').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(30);
+            const n = data ? data.length : 0;
+            document.getElementById('rating-sum').innerHTML = n ? `<a href="#avis">★ ${(data.reduce((a, r) => a + (r.rating || 0), 0) / n).toFixed(1).replace('.', ',')} / 5 · ${n} avis</a>` : '';
             document.getElementById('reviews-list').innerHTML = (data && data.length)
                 ? data.map(r => `<div class="review"><b>${esc(r.name)}</b> <span class="stars">${'★'.repeat(r.rating || 0)}${'☆'.repeat(5 - (r.rating || 0))}</span><p>${esc(r.message)}</p></div>`).join('')
                 : '<p class="rv-empty">Soyez le premier à laisser un avis !</p>';
         }
+        function contactUs() { window.open('https://wa.me/33621679229?text=' + encodeURIComponent('Bonjour CHEZ NOUS, j\'ai une question :'), '_blank'); }
+        function shareShop() {
+            const d = { title: 'CHEZ NOUS', text: 'Découvre CHEZ NOUS, boutique en ligne • Avec soin', url: location.origin };
+            navigator.share ? navigator.share(d).catch(() => {}) : window.open('https://wa.me/?text=' + encodeURIComponent(d.text + ' ' + d.url), '_blank');
+        }
+        document.getElementById('foot-logo').src = document.querySelector('.logo-img').src;
         async function sendReview() {
             if (document.getElementById('rv-hp').value) return;
             const name = v('rv-name'), message = v('rv-msg'), rating = parseInt(document.getElementById('rv-rating').value);
