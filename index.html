@@ -346,7 +346,6 @@
                 <textarea id="rv-msg" rows="3" maxlength="500" placeholder="Votre commentaire…"></textarea>
                 <input id="rv-hp" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
                 <button type="button" onclick="sendReview()">Publier mon avis</button>
-                <small>Votre avis sera visible après validation.</small>
             </div>
         </section>
 
@@ -592,9 +591,8 @@
             }
             const cats = [...new Set(allRows.map(r => r.category))];
             const { data: revs } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
-            const nPend = (revs || []).filter(r => !r.approved).length;
-            const revHtml = `<h4>Avis des clients${nPend ? ' (' + nPend + ' à valider)' : ''}</h4>` + ((revs || []).length
-                ? revs.map(r => `<div class="rv" data-rid="${r.id}"><b>${esc(r.name)}</b> ${'★'.repeat(r.rating || 0)} · ${r.approved ? '✅ publié' : '⏳ à valider'}<br>${esc(r.message)}<div class="line"><button class="rv-ok">${r.approved ? 'Masquer' : 'Publier'}</button><button class="del rv-del">Supprimer</button></div></div>`).join('')
+                        const revHtml = `<h4>Avis des clients</h4>` + ((revs || []).length
+                ? revs.map(r => `<div class="rv" data-rid="${r.id}"><b>${esc(r.name)}</b> ${'★'.repeat(r.rating || 0)} · ${r.approved ? '✅ publié' : '🙈 masqué'}<br>${esc(r.message)}<div class="line"><button class="rv-ok">${r.approved ? 'Masquer' : 'Republier'}</button><button class="del rv-del">Supprimer</button></div></div>`).join('')
                 : '<p>Aucun avis pour le moment.</p>');
             zone.innerHTML = `<div class="box"><b>Administrateur</b> · ${esc(session.user.email)}
               <h4>Ajouter un produit</h4>
@@ -675,7 +673,8 @@
             if (error) return alert('Erreur : ' + error.message);
             try { localStorage.setItem('rv-last', Date.now()); } catch (e) {}
             document.getElementById('rv-msg').value = '';
-            alert('Merci ! Votre avis sera visible après validation.');
+            await loadReviews();
+            alert('Merci ! Votre avis est publié.');
         }
         async function uploadPhoto(file) {
             const bmp = await createImageBitmap(file);
