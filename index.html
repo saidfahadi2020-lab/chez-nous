@@ -301,6 +301,16 @@
         .order-form textarea{width:100%;padding:10px;margin:0 0 8px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:1rem;font-family:inherit;resize:vertical}
         .order-form input,.order-form select{width:100%;padding:10px;margin:0 0 8px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:1rem;background:#fff}
         .modal-content{max-height:92vh;overflow-y:auto}
+        .reviews{margin-top:28px}
+        .reviews h2{color:var(--primary-color);font-size:1.2rem}
+        .review{background:#fff;border-left:4px solid var(--accent-color);border-radius:10px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+        .review p{margin:6px 0 0;color:#444}.review .stars{color:var(--accent-color);letter-spacing:2px}
+        .rv-empty{color:#6b5a4a;font-style:italic}
+        .rv-form{background:#fff;border:1px solid #e6dccb;border-radius:10px;padding:12px;margin-top:14px}
+        .rv-form input,.rv-form select,.rv-form textarea{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:1rem;font-family:inherit}
+        .rv-form button{width:100%;background:var(--primary-color);color:#fff;border:0;border-radius:8px;padding:11px;font-weight:bold;font-size:1rem}
+        .rv-form small{display:block;margin-top:6px;color:#6b5a4a}
+        #admin-zone .rv{border-top:1px solid #eee;padding:8px 0}#admin-zone .rv .line{display:flex;gap:6px}#admin-zone .rv .line>*{flex:1}
     </style>
 </head>
 <body>
@@ -326,6 +336,20 @@
             <!-- Généré par JavaScript -->
         </div>
 
+        <section class="reviews" id="avis">
+            <h2>💬 Avis de nos clients</h2>
+            <div id="reviews-list"></div>
+            <div class="rv-form">
+                <b>Laisser un avis</b>
+                <input id="rv-name" type="text" maxlength="60" placeholder="Votre prénom">
+                <select id="rv-rating"><option value="5">★★★★★ Excellent</option><option value="4">★★★★☆ Très bien</option><option value="3">★★★☆☆ Bien</option><option value="2">★★☆☆☆ Moyen</option><option value="1">★☆☆☆☆ Décevant</option></select>
+                <textarea id="rv-msg" rows="3" maxlength="500" placeholder="Votre commentaire…"></textarea>
+                <input id="rv-hp" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+                <button type="button" onclick="sendReview()">Publier mon avis</button>
+                <small>Votre avis sera visible après validation.</small>
+            </div>
+        </section>
+
     </div>
 
     <!-- Barre de Panier Flottante -->
@@ -346,7 +370,7 @@
                 <select id="c-mode" onchange="updateWa()"><option value="Livraison">🚚 Livraison</option><option value="Retrait">🏠 Retrait sur place</option></select>
                 <input id="c-name" type="text" placeholder="Votre nom et prénom" autocomplete="name" oninput="updateWa()">
                 <input id="c-addr" type="text" placeholder="Adresse : n°, rue, code postal, commune" autocomplete="street-address" oninput="updateWa()">
-                <textarea id="c-note" rows="2" placeholder="Commentaire (facultatif) : précisions, jour souhaité, allergies…" oninput="updateWa()"></textarea>
+                <textarea id="c-note" rows="2" placeholder="Précisions pour la commande (facultatif) : jour souhaité, allergies…" oninput="updateWa()"></textarea>
             </div>
 
             <div class="whatsapp-choices">
@@ -463,7 +487,7 @@
             let t = orderBase + '\n\nNom : ' + document.getElementById('c-name').value.trim() + '\nMode : ' + mode;
             if (mode === 'Livraison') t += '\nAdresse : ' + addr.value.trim();
             const note = document.getElementById('c-note').value.trim();
-            if (note) t += '\nCommentaire : ' + note;
+            if (note) t += '\nPrécisions : ' + note;
             const enc = encodeURIComponent(t);
             document.getElementById('wa-btn-1').href = `https://wa.me/33621679229?text=${enc}`;
             document.getElementById('wa-btn-2').href = `https://wa.me/33746173035?text=${enc}`;
@@ -567,6 +591,11 @@
                 return;
             }
             const cats = [...new Set(allRows.map(r => r.category))];
+            const { data: revs } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
+            const nPend = (revs || []).filter(r => !r.approved).length;
+            const revHtml = `<h4>Avis des clients${nPend ? ' (' + nPend + ' à valider)' : ''}</h4>` + ((revs || []).length
+                ? revs.map(r => `<div class="rv" data-rid="${r.id}"><b>${esc(r.name)}</b> ${'★'.repeat(r.rating || 0)} · ${r.approved ? '✅ publié' : '⏳ à valider'}<br>${esc(r.message)}<div class="line"><button class="rv-ok">${r.approved ? 'Masquer' : 'Publier'}</button><button class="del rv-del">Supprimer</button></div></div>`).join('')
+                : '<p>Aucun avis pour le moment.</p>');
             zone.innerHTML = `<div class="box"><b>Administrateur</b> · ${esc(session.user.email)}
               <h4>Ajouter un produit</h4>
               <input id="n-name" placeholder="Nom du produit">
@@ -584,6 +613,7 @@
                 <div class="line"><input class="e-price" inputmode="decimal" value="${String(r.price).replace('.', ',')}">
                 <select class="e-av"><option value="1"${r.available ? ' selected' : ''}>En vente</option><option value="0"${r.available ? '' : ' selected'}>Masqué</option></select></div>
                 <div class="line"><button class="e-save">Enregistrer</button><button class="del e-del">Supprimer</button></div></div>`).join('')}
+              ${revHtml}
               <button class="alt" id="a-out">Déconnexion</button></div>`;
             document.getElementById('a-out').onclick = async () => { await sb.auth.signOut(); zone.innerHTML = ''; initAdmin(); };
             const num = v => parseFloat(String(v).replace(',', '.'));
@@ -596,6 +626,20 @@
                 if (error) return alert('Erreur : ' + error.message);
                 await loadProducts(); showPanel(session);
             };
+            zone.querySelectorAll('[data-rid]').forEach(el => {
+                const id = el.dataset.rid, pub = el.querySelector('.rv-ok').textContent === 'Masquer';
+                el.querySelector('.rv-ok').onclick = async () => {
+                    const { error } = await sb.from('reviews').update({ approved: !pub }).eq('id', id);
+                    if (error) return alert('Erreur : ' + error.message);
+                    await loadReviews(); showPanel(session);
+                };
+                el.querySelector('.rv-del').onclick = async () => {
+                    if (!confirm('Supprimer cet avis ?')) return;
+                    const { error } = await sb.from('reviews').delete().eq('id', id);
+                    if (error) return alert('Erreur : ' + error.message);
+                    await loadReviews(); showPanel(session);
+                };
+            });
             zone.querySelectorAll('.row').forEach(el => {
                 const id = el.dataset.id;
                 el.querySelector('.e-save').onclick = async () => {
@@ -615,6 +659,24 @@
             });
         }
         const v = id => document.getElementById(id).value.trim();
+        async function loadReviews() {
+            if (!sb) return;
+            const { data } = await sb.from('reviews').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(30);
+            document.getElementById('reviews-list').innerHTML = (data && data.length)
+                ? data.map(r => `<div class="review"><b>${esc(r.name)}</b> <span class="stars">${'★'.repeat(r.rating || 0)}${'☆'.repeat(5 - (r.rating || 0))}</span><p>${esc(r.message)}</p></div>`).join('')
+                : '<p class="rv-empty">Soyez le premier à laisser un avis !</p>';
+        }
+        async function sendReview() {
+            if (document.getElementById('rv-hp').value) return;
+            const name = v('rv-name'), message = v('rv-msg'), rating = parseInt(document.getElementById('rv-rating').value);
+            if (!name || !message) return alert('Merci d\'écrire votre prénom et votre commentaire.');
+            try { if (Date.now() - Number(localStorage.getItem('rv-last') || 0) < 60000) return alert('Merci de patienter une minute avant un nouvel avis.'); } catch (e) {}
+            const { error } = await sb.from('reviews').insert({ name: name.slice(0, 60), message: message.slice(0, 500), rating });
+            if (error) return alert('Erreur : ' + error.message);
+            try { localStorage.setItem('rv-last', Date.now()); } catch (e) {}
+            document.getElementById('rv-msg').value = '';
+            alert('Merci ! Votre avis sera visible après validation.');
+        }
         async function uploadPhoto(file) {
             const bmp = await createImageBitmap(file);
             const k = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
@@ -629,6 +691,7 @@
         }
         renderCategories();
         renderProducts();
+        loadReviews();
         loadProducts().then(() => { if (sb && new URLSearchParams(location.search).has('admin')) initAdmin(); });
     </script>
 </body>
