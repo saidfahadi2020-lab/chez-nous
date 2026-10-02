@@ -298,6 +298,7 @@
         .qty-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--primary-color);background:#fff;color:var(--primary-color);font-size:1.1rem;font-weight:bold;cursor:pointer;padding:0}
         .product-img{width:100%;height:190px;object-fit:cover;border-radius:8px;margin-bottom:10px}
         .zone-info{background:#fff7e0;border:1px solid var(--accent-color);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:.9rem;line-height:1.45;color:var(--primary-color)}
+        .order-form textarea{width:100%;padding:10px;margin:0 0 8px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:1rem;font-family:inherit;resize:vertical}
         .order-form input,.order-form select{width:100%;padding:10px;margin:0 0 8px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;font-size:1rem;background:#fff}
         .modal-content{max-height:92vh;overflow-y:auto}
     </style>
@@ -345,6 +346,7 @@
                 <select id="c-mode" onchange="updateWa()"><option value="Livraison">🚚 Livraison</option><option value="Retrait">🏠 Retrait sur place</option></select>
                 <input id="c-name" type="text" placeholder="Votre nom et prénom" autocomplete="name" oninput="updateWa()">
                 <input id="c-addr" type="text" placeholder="Adresse : n°, rue, code postal, commune" autocomplete="street-address" oninput="updateWa()">
+                <textarea id="c-note" rows="2" placeholder="Commentaire (facultatif) : précisions, jour souhaité, allergies…" oninput="updateWa()"></textarea>
             </div>
 
             <div class="whatsapp-choices">
@@ -460,6 +462,8 @@
             addr.style.display = mode === 'Livraison' ? '' : 'none';
             let t = orderBase + '\n\nNom : ' + document.getElementById('c-name').value.trim() + '\nMode : ' + mode;
             if (mode === 'Livraison') t += '\nAdresse : ' + addr.value.trim();
+            const note = document.getElementById('c-note').value.trim();
+            if (note) t += '\nCommentaire : ' + note;
             const enc = encodeURIComponent(t);
             document.getElementById('wa-btn-1').href = `https://wa.me/33621679229?text=${enc}`;
             document.getElementById('wa-btn-2').href = `https://wa.me/33746173035?text=${enc}`;
